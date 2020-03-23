@@ -1,105 +1,133 @@
-const xSize = 25;
-const ySize = 25;
+const xSize = 50;
+const ySize = 15;
 const red = "#ff0000";
 const green = "#00ff00";
-const algo = document.getElementsByTagName('algo')[0].id
-let point = [];
-let selectedPoint = 0;
-let alreadyHasLine = false;
+var algo = "dda";
 
-const Algo = {
-    points: [],
-    dda: () => {
-        let x = point[0][0];
-        let y = point[0][1];
-        let dx = point[1][0] - point[0][0];
-        let dy = point[1][1] - point[0][1];
+let points = [];
+
+$(function(){
+    generate_table();
+});
+
+
+$("input[name='options']").click(function() {
+    reset();
+    algo = $(this).val();
+});
+
+function generate_table() {
+    console.log("Generating tables...");
+
+    var container = $(".table-container");
+    let table_out = "<table class='table table-bordered table-sm'>";
+
+    for (let row=ySize; row>=0; row--) {
+    table_out += "<tr>";
+
+        for(let col=0; col<=xSize; col++) {
+            table_out += `<td class="pixel" id="x${col}y${row}" onclick="select(${col}, ${row})">&nbsp;</td>`;
+        }
+
+        table_out += "</tr>";
+    }
+
+    table_out += "</table>";
+    container.html(table_out);
+}
+
+function reset() {
+    points = [];
+    $('.pixel').removeClass('bg-primary');
+    $('.pixel').removeClass('bg-success');
+}
+
+function select(x,y) {
+    console.log(`Koordinat: (${x},${y})`);
+
+    if(points.length <= 1) {
+        points.push([x,y]);
+        $(`#x${x}y${y}`).addClass('bg-primary');
+    } else {
+        update_ends(x,y);
+    }
+
+    var paint_dots = calculate(points);
+
+    paint(paint_dots);
+}
+
+function paint(dot) {
+    $.each(dot, function(e, val) {
+        $(`#x${val[0]}y${val[1]}`).addClass('bg-success');
+    });
+}
+
+function update_ends(x,y) {
+    let popped = points.pop();
+    $(`#x${popped[0]}y${popped[1]}`).removeClass('bg-primary');
+
+    points.push([x,y]);
+    $(`#x${x}y${y}`).addClass('bg-primary');
+}
+
+function calculate(dot) {
+    if(dot.length < 2) return;
+
+    let s_x = dot[0][0];
+    let s_y = dot[0][1];
+    let e_x = dot[1][0];
+    let e_y = dot[1][1];
+
+    let point_result = [];
+
+    $('.pixel').removeClass('bg-success');
+
+    console.log(dot);
+
+    if(algo==="dda") {
+        console.log("Using DDA");
+
+        let currentX = s_x;
+        let currentY = s_y;
+
+        let dx = e_x - s_x;
+        let dy = e_y - s_y;
+
         let step = Math.abs(dx) >= Math.abs(dy) ? Math.abs(dx) : Math.abs(dy);
         let xStep = dx / step;
         let yStep = dy / step;
-        let points = [];
+
         for (let i=0; i<step; i++) {
-            let elem = document.getElementById(`${Math.round(x)},${Math.round(y)}`);
-            fillPixel(elem, green);
-            points.push([Math.round(x), Math.round(y)]);
-            x += xStep;
-            y += yStep;
+            point_result.push([Math.round(currentX), Math.round(currentY)]);
+            currentX += xStep;
+            currentY += yStep;
         }
-        showResult(points);
-    },
-    bresenhamLine: () => {
-        let x = point[0][0];
-        let y = point[0][1];
-        let dx = Math.abs(point[1][0] - point[0][0]);
-        let dy = -Math.abs(point[1][1] - point[0][1]);
-        let sx = point[0][0] < point[1][0] ? 1 : -1;
-        let sy = point[0][1] < point[1][1] ? 1 : -1;
+
+        return point_result;
+    } else if(algo==="bresenham") {
+        console.log("Using Bresenham");
+
+        let currentX = s_x;
+        let currentY = s_y;
+
+        let dx = Math.abs(e_x - s_x);
+        let dy = -Math.abs(e_y - s_y);
+
+        let sx = s_x < e_x ? 1 : -1;
+        let sy = s_y < e_y ? 1 : -1;
+
         let err = dx + dy;
-        let points = [];
+
         while (true) {
-            if (x === point[1][0] && y === point[1][1]) break;
-            let elem = document.getElementById(`${x},${y}`);
-            fillPixel(elem, green);
-            points.push([x, y]);
+            if (currentX === e_x && currentY === e_y) break;
+            point_result.push([currentX, currentY]);
+
             e2 = err * 2;
-            if (e2 >= dy) { err += dy; x += sx; };
-            if (e2 <= dx) { err += dx; y += sy; };
+            if (e2 >= dy) { err += dy; currentX += sx; };
+            if (e2 <= dx) { err += dx; currentY += sy; };
         }
-        showResult(points);
+
+        return point_result;
     }
 }
-
-// Generate table
-let container = document.querySelector('.table-container')
-let tableContent = "<table>"
-for (let row=ySize; row>=0; row--) {
-    tableContent += "<tr>";
-    for(let col=0; col<=xSize; col++) {
-        tableContent += `<td class="pixel" id="${col},${row}" onclick="select(${col}, ${row})"></td>`;
-    }
-    tableContent += "</tr>";
-}
-
-tableContent += "</table>";
-container.innerHTML += tableContent;
-
-const reset = (hardReset=false) => {
-    selectedPoint = 0;
-    point = [];
-    alreadyHasLine = true;
-    if (hardReset) {
-        activePixels = document.querySelectorAll("td[style]");
-        activePixels.forEach(item => {
-            item.removeAttribute('style');
-        });
-        document.querySelector('.selected-point').innerHTML = "";
-        alreadyHasLine = false;
-    }
-}
-
-const fillPixel = (elem, color) => {
-    elem.style.background = color;
-}
-
-const select = (x, y) => {
-    if (alreadyHasLine) { return; }
-    let elem = document.getElementById(`${x},${y}`);
-    fillPixel(elem, red);
-    selectedPoint++;
-    point.push([x, y]);
-    document.querySelector('.selected-point').innerHTML += `<b>(${x}, ${y}) </b>`
-    if (selectedPoint >= 2) {
-        Algo[algo]();
-        reset();
-    }
-}
-
-const showResult = points => {
-    let result = "";
-    let resultContainer = document.querySelector('.result')
-    points.forEach(item => {
-        result += `(${item[0]}, ${item[1]})<br>`;
-    })
-    resultContainer.innerHTML = result;
-}
-
