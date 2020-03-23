@@ -59,6 +59,7 @@ for (let row=ySize; row>=0; row--) {
     }
     tableContent += "</tr>";
 }
+
 tableContent += "</table>";
 container.innerHTML += tableContent;
 
