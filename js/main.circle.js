@@ -56,6 +56,10 @@ function select(x,y) {
 }
 
 function paint(dot) {
+    $.each(points, function(e, val) {
+        $(`#x${val[0]}y${val[1]}`).addClass('bg-primary');
+    });
+
     $.each(dot, function(e, val) {
         $(`#x${val[0]}y${val[1]}`).addClass('bg-success');
     });
@@ -69,44 +73,15 @@ function update_ends(x,y) {
     $(`#x${x}y${y}`).addClass('bg-primary');
 }
 
-function calculate(dot) {
-    if(dot.length < 2) return;
-
+function distance(dot) {
     let s_x = dot[0][0];
     let s_y = dot[0][1];
     let e_x = dot[1][0];
     let e_y = dot[1][1];
 
-    let point_result = [];
+    var point_result = [];
 
-    $('.pixel').removeClass('bg-success');
-
-    console.log(dot);
-
-    if(algo==="dda") {
-        console.log("Using DDA");
-
-        let currentX = s_x;
-        let currentY = s_y;
-
-        let dx = e_x - s_x;
-        let dy = e_y - s_y;
-
-        let step = Math.abs(dx) >= Math.abs(dy) ? Math.abs(dx) : Math.abs(dy);
-        let xStep = dx / step;
-        let yStep = dy / step;
-
-        for (let i=0; i<step; i++) {
-            point_result.push([Math.round(currentX), Math.round(currentY)]);
-            currentX += xStep;
-            currentY += yStep;
-        }
-
-        return point_result;
-    } else if(algo==="bresenham") {
-        console.log("Using Bresenham");
-
-        let currentX = s_x;
+    let currentX = s_x;
         let currentY = s_y;
 
         let dx = Math.abs(e_x - s_x);
@@ -135,5 +110,63 @@ function calculate(dot) {
         }
 
         return point_result;
+}
+
+function calculate(dot) {
+    if(dot.length < 2) return;
+
+    let s_x = dot[0][0];
+    let s_y = dot[0][1];
+    let e_x = dot[1][0];
+    let e_y = dot[1][1];
+
+    var point_result = [];
+    var r = distance(dot).length - 1;
+
+    $('.pixel').removeClass('bg-success');
+
+    currentX = 0
+    currentY = r;
+
+    var d = 3 - 2 * r;
+
+    var d1 = draw_circle(s_x, s_y, currentX, currentY);
+    point_result.push(...d1);
+
+    while(currentY >= currentX) {
+        // for each pixel we will
+        // draw all eight pixels
+        currentX++;
+
+        // check for decision parameter
+        // and correspondingly
+        // update d, x, y
+        if (d > 0)
+        {
+            currentY--;
+            d = d + 4 * (currentX - currentY) + 10;
+        }
+        else
+            d = d + 4 * currentX + 6;
+
+        var bagian = draw_circle(s_x, s_y, currentX, currentY);
+        point_result.push(...bagian);
     }
+
+    return point_result;
+}
+
+function draw_circle(xc, yc, x, y) {
+    var drawResult = [];
+
+    drawResult.push([+xc+x, +yc+y]);
+    drawResult.push([+xc-x, +yc+y]);
+    drawResult.push([+xc+x, +yc-y]);
+    drawResult.push([+xc-x, +yc-y]);
+    drawResult.push([+xc+y, +yc+x]);
+    drawResult.push([+xc-y, +yc+x]);
+    drawResult.push([+xc+y, +yc-x]);
+    drawResult.push([+xc-y, +yc-x]);
+
+    return drawResult;
 }
