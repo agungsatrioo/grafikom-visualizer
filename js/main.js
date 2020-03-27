@@ -26,7 +26,7 @@ function generate_table() {
     table_out += "<tr>";
 
         for(let col=0; col<=xSize; col++) {
-            table_out += `<td class="pixel" id="x${col}y${row}" onclick="select(${col}, ${row})">&nbsp;</td>`;
+            table_out += `<td class="pixel" id="x${col}y${row}" onclick="select(${col}, ${row})"></td>`;
         }
 
         table_out += "</tr>";
